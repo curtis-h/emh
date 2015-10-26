@@ -1,0 +1,106 @@
+<html>
+<head>
+    <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="main.js"></script>
+</head>
+<body>
+<button id="button">Test Button</button>
+<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    
+<script src="http://code.highcharts.com/highcharts.js"></script>
+<script src="http://code.highcharts.com/modules/exporting.js"></script>
+<script>
+    var Chart;
+    $(function() {
+        $(document).ready(function() {
+            var Socket   = io();
+
+            var addPoint = function(y) {
+                var x = (new Date()).getTime();
+                var series = Chart.series[0];
+                series.addPoint([x, y], true, true);
+            };
+            
+            $("#button").click(function() {
+                var y = Math.random();
+                addPoint(y);
+            });
+            
+            Socket.on('saved', function(data) {
+                addPoint(data);
+            });
+            
+            
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
+        
+            $('#container').highcharts({
+                chart: {
+                    type: 'line',
+                    animation: Highcharts.svg, // don't animate in old IE
+                    marginRight: 10,
+                    events: {
+                        load: function() {
+                            Chart = this;
+                        }
+                    }
+                },
+                title: {
+                    text: 'Live data'
+                },
+                xAxis: {
+                    type: 'datetime',
+                    tickPixelInterval: 150
+                },
+                yAxis: {
+                    title: {
+                        text: 'Value'
+                    },
+                    plotLines: [{
+                        value: 0,
+                        width: 1,
+                        color: '#808080'
+                    }]
+                },
+                tooltip: {
+                    formatter: function() {
+                            return '<b>'+ this.series.name +'</b><br/>'+
+                            Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) +'<br/>'+
+                            Highcharts.numberFormat(this.y, 2);
+                    }
+                },
+                legend: {
+                    enabled: false
+                },
+                exporting: {
+                    enabled: false
+                },
+                series: [{
+                    name: 'Random data',
+                    data: (function() {
+                        // generate an array of random data
+                        var data = [],
+                            time = (new Date()).getTime(),
+                            i;
+        
+                        for (i = -19; i <= 0; i++) {
+                            data.push({
+                                x: time + i * 1000,
+                                y: Math.random()
+                            });
+                        }
+                        return data;
+                    })()
+                }]
+            });
+        });
+        
+    });
+</script>
+</body>
+</html>
